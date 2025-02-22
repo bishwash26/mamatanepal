@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import PostDetails from './pages/PostDetails';
 import Blogs from './pages/Blogs';
 import BlogDetail from './pages/BlogDetail';
+import PrivateRoute from './components/PrivateRoute';
 import './i18n';
 
 function App() {
@@ -16,12 +17,36 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="resources" element={<Resources />} />
-          <Route path="discussions" element={<Discussions />} />
-          <Route path="discussions/:id" element={<PostDetails />} />
-          <Route path="blogs" element={<Blogs />} />
-          <Route path="blogs/:id" element={<BlogDetail />} />
+          <Route index element={
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
+          } />
+          <Route path="resources" element={
+            <PrivateRoute>
+              <Resources />
+            </PrivateRoute>
+          } />
+          <Route path="discussions" element={
+            <PrivateRoute>
+              <Discussions />
+            </PrivateRoute>
+          } />
+          <Route path="discussions/:id" element={
+            <PrivateRoute>
+              <PostDetails />
+            </PrivateRoute>
+          } />
+          <Route path="blogs" element={
+            <PrivateRoute>
+              <Blogs />
+            </PrivateRoute>
+          } />
+          <Route path="blogs/:id" element={
+            <PrivateRoute>
+              <BlogDetail />
+            </PrivateRoute>
+          } />
         </Route>
       </Routes>
     </Router>

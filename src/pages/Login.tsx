@@ -4,9 +4,12 @@ import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { Heart } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Listen for auth state changes
@@ -38,6 +41,10 @@ const Login = () => {
             console.error('Error creating profile:', error);
           }
         }
+
+        // Redirect to the page they tried to visit or home
+        const from = location.state?.from?.pathname || '/';
+        navigate(from);
       }
     });
 
@@ -45,7 +52,7 @@ const Login = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [location, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">

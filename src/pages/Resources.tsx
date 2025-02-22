@@ -63,6 +63,13 @@ export default function Resources() {
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [loadingShorts, setLoadingShorts] = useState(false);
 
+  // Define tabs
+  const tabs = [
+    { value: 'articles', label: 'articles', icon: BookOpen },
+    { value: 'videos', label: 'videos', icon: Youtube },
+    { value: 'shorts', label: 'shorts', icon: Play }
+  ];
+
   useEffect(() => {
     fetchUserRole();
   }, []);
@@ -208,74 +215,61 @@ export default function Resources() {
         </p>
       </div>
 
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex justify-center space-x-4">
-          <button
-            onClick={() => setActiveTab('articles')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-              activeTab === 'articles'
-                ? 'bg-primary-500 text-white'
-                : 'bg-white text-gray-600 hover:bg-primary-50'
-            }`}
-          >
-            <BookOpen className="h-5 w-5" />
-            <span>{t('articles')}</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('videos')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-              activeTab === 'videos'
-                ? 'bg-primary-500 text-white'
-                : 'bg-white text-gray-600 hover:bg-primary-50'
-            }`}
-          >
-            <Youtube className="h-5 w-5" />
-            <span>{t('videos')}</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('shorts')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-              activeTab === 'shorts'
-                ? 'bg-primary-500 text-white'
-                : 'bg-white text-gray-600 hover:bg-primary-50'
-            }`}
-          >
-            <Play className="h-5 w-5" />
-            <span>{t('shorts')}</span>
-          </button>
+      {/* Tabs Navigation */}
+      <div className="border-b border-gray-200 mb-6">
+        <div className="flex flex-wrap gap-2 px-4 sm:px-0">
+          {tabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                activeTab === tab.value
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-white text-gray-600 hover:bg-primary-50'
+              }`}
+            >
+              <tab.icon className="h-5 w-5" />
+              <span>{t(tab.label)}</span>
+            </button>
+          ))}
         </div>
+      </div>
 
-        {userRole === 'doctor' && (
-          <div className="flex space-x-4">
-            {activeTab === 'articles' && (
-              <button
-                onClick={() => setShowCreateBlog(true)}
-                className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                <Plus size={20} />
-                <span>{t('Create Blog')}</span>
-              </button>
-            )}
-            {activeTab === 'videos' && (
-              <button
-                onClick={() => setShowCreateVideo(true)}
-                className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                <Plus size={20} />
-                <span>{t('Add Video')}</span>
-              </button>
-            )}
-            {activeTab === 'shorts' && (
-              <button
-                onClick={() => setShowCreateShort(true)}
-                className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                <Plus size={20} />
-                <span>{t('Add Short')}</span>
-              </button>
-            )}
-          </div>
-        )}
+      {/* Action Buttons */}
+      <div className="mb-6 px-4 sm:px-0">
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+          {userRole === 'doctor' && (
+            <>
+              {activeTab === 'articles' && (
+                <button
+                  onClick={() => setShowCreateBlog(true)}
+                  className="flex items-center justify-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors w-full sm:w-auto"
+                >
+                  <Plus size={20} />
+                  <span>{t('Create Blog')}</span>
+                </button>
+              )}
+              {activeTab === 'videos' && (
+                <button
+                  onClick={() => setShowCreateVideo(true)}
+                  className="flex items-center justify-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors w-full sm:w-auto"
+                >
+                  <Plus size={20} />
+                  <span>{t('Add Video')}</span>
+                </button>
+              )}
+              {activeTab === 'shorts' && (
+                <button
+                  onClick={() => setShowCreateShort(true)}
+                  className="flex items-center justify-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors w-full sm:w-auto"
+                >
+                  <Plus size={20} />
+                  <span>{t('Add Short')}</span>
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-8">
@@ -370,7 +364,7 @@ export default function Resources() {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
             </div>
           ) : shorts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {shorts.map(short => (
                 <div key={short.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                   <div className="aspect-w-9 aspect-h-16">

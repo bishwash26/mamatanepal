@@ -1,31 +1,40 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, LogOut, User, Globe, ChevronDown } from 'lucide-react';
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Heart, MessageCircle, LogOut, User, Globe, ChevronDown, Menu, X, Home, Video, BookOpen } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function Layout() {
   const { t, i18n } = useTranslation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error logging out:', error);
-    } else {
-      setIsProfileOpen(false);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
     }
   };
 
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === 'en' ? 'ne' : 'en');
+  const isActivePath = (path: string) => {
+    return location.pathname === path;
   };
 
+  const mobileNavItems = [
+    { path: '/', label: 'home', icon: Home },
+    { path: '/resources', label: 'resources', icon: Video },
+    { path: '/discussions', label: 'discussions', icon: MessageCircle }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
-      <nav className="bg-white shadow-lg border-b border-primary-100">
+    <div className="min-h-screen flex flex-col">
+      {/* Desktop Navigation */}
+      <nav className="bg-white shadow-md hidden sm:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -77,11 +86,85 @@ export default function Layout() {
                 )}
               </div>
             </div>
+
+            {/* Mobile menu button */}
+            <div className="flex items-center sm:hidden">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+              >
+                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Mobile Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 sm:hidden z-50">
+        <div className="grid grid-cols-3 h-16">
+          {mobileNavItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex flex-col items-center justify-center space-y-1 ${
+                  isActivePath(item.path)
+                    ? 'text-primary-600'
+                    : 'text-gray-600 hover:text-primary-600'
+                }`}
+              >
+                <Icon size={20} />
+                <span className="text-xs">{t(item.label)}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* Profile Menu - Mobile */}
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 sm:hidden z-40 px-4 py-2">
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl font-bold text-primary-600">{t('Mamata Nepal')}</h1>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="p-2 rounded-full hover:bg-gray-100"
+            >
+              <User size={24} className="text-gray-600" />
+            </button>
+          </div>
+        </div>
+        
+        {isProfileOpen && (
+          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 py-2 px-4 shadow-lg">
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2 py-2">
+                <Globe size={20} />
+                <select
+                  value={i18n.language}
+                  onChange={(e) => i18n.changeLanguage(e.target.value)}
+                  className="block w-full bg-transparent"
+                >
+                  <option value="en">English</option>
+                  <option value="hi">हिंदी</option>
+                </select>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 text-red-600 w-full py-2"
+              >
+                <LogOut size={20} />
+                <span>{t('logout')}</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 pb-16 sm:pb-0">
         <Outlet />
       </main>
 
