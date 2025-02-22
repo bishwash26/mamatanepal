@@ -21,6 +21,12 @@ export default function Layout() {
     }
   };
 
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'ne' : 'en';
+    i18n.changeLanguage(newLang);
+    setIsProfileOpen(false);
+  };
+
   const isActivePath = (path: string) => {
     return location.pathname === path;
   };
@@ -100,7 +106,48 @@ export default function Layout() {
         </div>
       </nav>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Header - Fixed */}
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 sm:hidden z-40 h-14">
+        <div className="flex justify-between items-center h-full px-4">
+          <h1 className="text-xl font-bold text-primary-600">{t('Mamata Nepal')}</h1>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="p-2 rounded-full hover:bg-gray-100"
+            >
+              <User size={24} className="text-gray-600" />
+            </button>
+          </div>
+        </div>
+        
+        {isProfileOpen && (
+          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 py-2 px-4 shadow-lg">
+            <div className="space-y-3">
+              <button
+                onClick={toggleLanguage}
+                className="flex items-center space-x-2 w-full py-2 hover:bg-primary-50 rounded-lg"
+              >
+                <Globe size={20} />
+                <span>{i18n.language === 'en' ? 'नेपाली' : 'English'}</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 text-red-600 w-full py-2 hover:bg-red-50 rounded-lg"
+              >
+                <LogOut size={20} />
+                <span>{t('logout')}</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content - Add padding for mobile header and bottom nav */}
+      <main className="flex-1 pt-16 pb-16 sm:pt-0 sm:pb-0">
+        <Outlet />
+      </main>
+
+      {/* Mobile Bottom Navigation - Fixed */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 sm:hidden z-50">
         <div className="grid grid-cols-3 h-16">
           {mobileNavItems.map((item) => {
@@ -122,51 +169,6 @@ export default function Layout() {
           })}
         </div>
       </nav>
-
-      {/* Profile Menu - Mobile */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 sm:hidden z-40 px-4 py-2">
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold text-primary-600">{t('Mamata Nepal')}</h1>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="p-2 rounded-full hover:bg-gray-100"
-            >
-              <User size={24} className="text-gray-600" />
-            </button>
-          </div>
-        </div>
-        
-        {isProfileOpen && (
-          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 py-2 px-4 shadow-lg">
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2 py-2">
-                <Globe size={20} />
-                <select
-                  value={i18n.language}
-                  onChange={(e) => i18n.changeLanguage(e.target.value)}
-                  className="block w-full bg-transparent"
-                >
-                  <option value="en">English</option>
-                  <option value="hi">हिंदी</option>
-                </select>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 text-red-600 w-full py-2"
-              >
-                <LogOut size={20} />
-                <span>{t('logout')}</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Main Content */}
-      <main className="flex-1 pb-16 sm:pb-0">
-        <Outlet />
-      </main>
 
       <footer className="bg-white border-t border-primary-100 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

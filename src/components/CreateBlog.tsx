@@ -12,6 +12,7 @@ export default function CreateBlog({ onClose, onSuccess }: CreateBlogProps) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [authorCredit, setAuthorCredit] = useState('');
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -81,7 +82,7 @@ export default function CreateBlog({ onClose, onSuccess }: CreateBlogProps) {
         console.log('Image uploaded successfully:', imageUrl);
       }
 
-      const { error: blogError } = await supabase
+      const { error } = await supabase
         .from('blogs')
         .insert([
           {
@@ -89,20 +90,16 @@ export default function CreateBlog({ onClose, onSuccess }: CreateBlogProps) {
             content: content.trim(),
             image_url: imageUrl,
             author_id: user.id,
+            author_credit: authorCredit.trim() || null
           },
         ]);
 
-      if (blogError) {
-        console.error('Error creating blog:', blogError);
-        alert(t('Failed to create blog. Please try again.'));
-        return;
-      }
-
+      if (error) throw error;
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Error creating blog:', error);
-      alert(t('An error occurred. Please try again.'));
+      alert(t('Failed to create blog. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -146,6 +143,19 @@ export default function CreateBlog({ onClose, onSuccess }: CreateBlogProps) {
               onChange={(e) => setContent(e.target.value)}
               className="w-full h-48 p-3 border rounded-lg focus:ring-primary-500 focus:border-primary-500"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('Author Credit')}
+            </label>
+            <input
+              type="text"
+              value={authorCredit}
+              onChange={(e) => setAuthorCredit(e.target.value)}
+              placeholder={t('Enter original author name (optional)')}
+              className="w-full p-3 border rounded-lg focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 

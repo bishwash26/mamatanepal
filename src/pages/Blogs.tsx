@@ -14,6 +14,7 @@ interface Blog {
   profiles: {
     username: string;
   };
+  author_credit: string | null;
 }
 
 const truncateContent = (content: string, wordLimit: number = 300) => {
@@ -117,14 +118,14 @@ const Blogs = () => {
                   </button>
                 )}
                 <div className="flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center space-x-2">
-                    <User size={16} />
-                    <span>{blog.profiles?.username || t('Anonymous')}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar size={16} />
-                    <span>{new Date(blog.created_at).toLocaleDateString()}</span>
-                  </div>
+                  <span className="flex items-center">
+                    <User size={14} className="mr-1" />
+                    {blog.author_credit || blog.profiles?.username || t('Anonymous')}
+                  </span>
+                  <span className="flex items-center">
+                    <Calendar size={14} className="mr-1" />
+                    {new Date(blog.created_at).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
             </article>

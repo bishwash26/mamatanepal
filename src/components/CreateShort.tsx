@@ -12,6 +12,7 @@ export default function CreateShort({ onClose, onSuccess }: CreateShortProps) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [youtubeId, setYoutubeId] = useState('');
+  const [authorCredit, setAuthorCredit] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,7 +23,7 @@ export default function CreateShort({ onClose, onSuccess }: CreateShortProps) {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        alert(t('Please login to create a short'));
+        alert(t('Please login to add a short'));
         return;
       }
 
@@ -33,20 +34,16 @@ export default function CreateShort({ onClose, onSuccess }: CreateShortProps) {
             title: title.trim(),
             youtube_id: youtubeId.trim(),
             author_id: user.id,
+            author_credit: authorCredit.trim() || null
           },
         ]);
 
-      if (error) {
-        console.error('Error creating short:', error);
-        alert(t('Failed to create short. Please try again.'));
-        return;
-      }
-
+      if (error) throw error;
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Error creating short:', error);
-      alert(t('An error occurred. Please try again.'));
+      alert(t('Failed to add short. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -89,9 +86,21 @@ export default function CreateShort({ onClose, onSuccess }: CreateShortProps) {
               type="text"
               value={youtubeId}
               onChange={(e) => setYoutubeId(e.target.value)}
-              placeholder="e.g., dQw4w9WgXcQ"
               className="w-full p-3 border rounded-lg focus:ring-primary-500 focus:border-primary-500"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('Author Credit')}
+            </label>
+            <input
+              type="text"
+              value={authorCredit}
+              onChange={(e) => setAuthorCredit(e.target.value)}
+              placeholder={t('Enter original content creator name (optional)')}
+              className="w-full p-3 border rounded-lg focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
@@ -99,7 +108,7 @@ export default function CreateShort({ onClose, onSuccess }: CreateShortProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 hover:text-gray-900"
+              className="px-4 py-2 text-gray-600 hover:text-gray-700"
             >
               {t('Cancel')}
             </button>

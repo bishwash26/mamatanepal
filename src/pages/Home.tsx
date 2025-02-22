@@ -162,15 +162,15 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
-      <div className="space-y-8">
+      <div className="space-y-8 px-4 sm:px-0">
         <section className="text-center">
           <h1 className="text-4xl font-bold text-primary-700 mb-4">
             {t('welcome')}
           </h1>
         </section>
 
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex justify-between items-center mb-8">
+        <section className="py-8">
+          <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold text-primary-600">{t('Blogs')}</h2>
             <button 
               onClick={() => navigate('/resources?tab=articles')}
@@ -182,15 +182,15 @@ export default function Home() {
           </div>
 
           {loadingBlogs ? (
-            <div className="flex justify-center py-12">
+            <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {popularBlogs.map(blog => (
                 <div 
                   key={blog.id} 
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
                   onClick={() => navigate(`/blogs/${blog.id}`)}
                 >
                   <img 
@@ -222,8 +222,8 @@ export default function Home() {
           )}
         </section>
 
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex justify-between items-center mb-8">
+        <section className="py-8">
+          <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold text-primary-600">{t('Videos')}</h2>
             <button 
               onClick={() => navigate('/resources?tab=videos')}
@@ -235,11 +235,11 @@ export default function Home() {
           </div>
 
           {loadingVideos ? (
-            <div className="flex justify-center py-12">
+            <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {popularVideos.map(video => (
                 <div key={video.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                   <div className="aspect-w-16 aspect-h-9">
@@ -247,17 +247,17 @@ export default function Home() {
                       src={`https://www.youtube.com/embed/${video.youtube_id}`}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
-                      className="w-full h-[300px]"
+                      className="w-full h-[200px] sm:h-[300px]"
                     ></iframe>
                   </div>
                   <div className="p-4">
                     <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-1">
                       {video.title}
                     </h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">
                       {video.description}
                     </p>
-                    <div className="mt-2 flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center justify-between text-sm text-gray-500">
                       <span className="flex items-center">
                         <User size={14} className="mr-1" />
                         {video.profiles?.username || t('Anonymous')}
@@ -271,8 +271,8 @@ export default function Home() {
           )}
         </section>
 
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex justify-between items-center mb-8">
+        <section className="py-8">
+          <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold text-primary-600">{t('Shorts')}</h2>
             <button 
               onClick={() => navigate('/resources?tab=shorts')}
@@ -284,11 +284,11 @@ export default function Home() {
           </div>
 
           {loadingShorts ? (
-            <div className="flex justify-center py-12">
+            <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {popularShorts.map(short => (
                 <div key={short.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                   <div className="aspect-w-9 aspect-h-16">
@@ -296,7 +296,7 @@ export default function Home() {
                       src={`https://www.youtube.com/embed/${short.youtube_id}`}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
-                      className="w-full h-[200px]"
+                      className="w-full h-[160px] sm:h-[200px]"
                     ></iframe>
                   </div>
                   <div className="p-3">

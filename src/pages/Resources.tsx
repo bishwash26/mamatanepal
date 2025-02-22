@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Share2, BookOpen, Youtube, Plus } from 'lucide-react';
+import { Play, Share2, BookOpen, Youtube, Plus, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import CreateBlog from '../components/CreateBlog';
@@ -31,6 +31,7 @@ interface Video {
   profiles: {
     username: string;
   };
+  author_credit?: string;
 }
 
 interface Short {
@@ -45,6 +46,7 @@ interface Short {
   profiles: {
     username: string;
   };
+  author_credit?: string;
 }
 
 export default function Resources() {
@@ -293,9 +295,13 @@ export default function Resources() {
                     <h2 className="text-2xl font-semibold text-gray-800 mb-2">
                       {blog.title}
                     </h2>
-                    <p className="text-sm text-primary-600 mb-4">
-                      By {blog.profiles?.username || t('Anonymous')} • {new Date(blog.created_at).toLocaleDateString()}
-                    </p>
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <span className="flex items-center">
+                        <User size={14} className="mr-1" />
+                        {blog.author_credit || blog.profiles?.username || t('Anonymous')}
+                      </span>
+                      <span>{new Date(blog.created_at).toLocaleDateString()}</span>
+                    </div>
                     <p className="text-gray-600 mb-4">
                       {blog.content}
                     </p>
@@ -339,9 +345,13 @@ export default function Resources() {
                     <h2 className="text-xl font-semibold text-gray-800 mb-2">
                       {video.title}
                     </h2>
-                    <p className="text-sm text-primary-600 mb-4">
-                      By {video.profiles?.username || t('Anonymous')} • {video.duration}
-                    </p>
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <span className="flex items-center">
+                        <User size={14} className="mr-1" />
+                        {video.author_credit || video.profiles?.username || t('Anonymous')}
+                      </span>
+                      <span>{video.duration}</span>
+                    </div>
                     <p className="text-gray-600 mb-4">{video.description}</p>
                     <button className="text-primary-600 hover:text-primary-700 font-medium flex items-center space-x-2">
                       <Share2 className="h-4 w-4" />
@@ -379,9 +389,11 @@ export default function Resources() {
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">
                       {short.title}
                     </h3>
-                    <p className="text-sm text-primary-600">
-                      By {short.profiles?.username || t('Anonymous')} • {short.duration}
-                    </p>
+                    <div className="p-3">
+                      <p className="text-xs text-gray-500 mt-1">
+                        {short.author_credit || short.profiles?.username || t('Anonymous')}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
