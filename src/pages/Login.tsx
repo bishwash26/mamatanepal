@@ -56,38 +56,70 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-12 flex flex-col lg:flex-row items-center justify-between">
-        {/* Left side content */}
-        <div className="lg:w-1/2 mb-10 lg:mb-0">
-          <div className="flex items-center space-x-3 mb-4">
-            <Heart className="h-12 w-12 text-pink-600" />
-            <h1 className="text-5xl lg:text-7xl font-bold text-pink-600">
-              Mamata Nepal
-            </h1>
-          </div>
+      {/* Hero Section with Background Image */}
+      <div className="relative min-h-screen">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/mother-baby.jpg"
+            alt="Mother and child"
+            className="w-full h-full object-cover opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-pink-50/90 to-white"></div>
         </div>
 
-        {/* Right side auth */}
-        <div className="lg:w-1/2 max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
-            Join Our Community
-          </h2>
-          <Auth
-            supabaseClient={supabase}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: '#EC4899',
-                    brandAccent: '#DB2777',
+        {/* Content */}
+        <div className="relative z-10 container mx-auto px-4 py-12 flex flex-col lg:flex-row items-center justify-between">
+          {/* Left side content */}
+          <div className="lg:w-1/2 mb-10 lg:mb-0">
+            <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+              <div className="flex items-center space-x-3 mb-6">
+                <Heart className="h-12 w-12 text-pink-600" />
+                <h1 className="text-4xl lg:text-6xl font-bold text-pink-600">
+                  Mamata Nepal
+                </h1>
+              </div>
+              <p className="text-xl lg:text-2xl text-gray-700 mb-8 max-w-lg">
+                {t('A safe space for expecting mothers to share experiences and find support')}
+              </p>
+              <div className="space-y-4 text-gray-600">
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                  <p>{t('Connect with other mothers')}</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                  <p>{t('Access valuable resources')}</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                  <p>{t('Get expert advice')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right side auth */}
+          <div className="lg:w-1/2 max-w-md w-full bg-white/80 backdrop-blur-sm p-8 rounded-lg shadow-lg">
+            <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
+              {t('Join Our Community')}
+            </h2>
+            <Auth
+              supabaseClient={supabase}
+              appearance={{
+                theme: ThemeSupa,
+                variables: {
+                  default: {
+                    colors: {
+                      brand: '#EC4899',
+                      brandAccent: '#DB2777',
+                    },
                   },
                 },
-              },
-            }}
-            providers={['google']}
-          />
+              }}
+              providers={['google']}
+            />
+          </div>
         </div>
       </div>
 
