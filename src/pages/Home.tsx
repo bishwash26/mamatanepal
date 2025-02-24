@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
-import { Calendar, User, ArrowRight } from 'lucide-react';
+import { Calendar, User, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Profile {
@@ -58,6 +58,30 @@ export default function Home() {
   const [popularShorts, setPopularShorts] = useState<Short[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [loadingShorts, setLoadingShorts] = useState(true);
+
+  const categories = [
+    {
+      id: 1,
+      title: 'Maternity Wear',
+      description: 'Comfortable and stylish clothing for every stage of pregnancy',
+      image: '/maternity-collections.png',
+      link: '/shop/maternity'
+    },
+    {
+      id: 2,
+      title: 'Nursing Essentials',
+      description: 'Everything you need for a comfortable nursing journey',
+      image: '/nursing-essentials.png',
+      link: '/shop/nursing'
+    },
+    {
+      id: 3,
+      title: 'Baby Care',
+      description: 'Premium products for your little one',
+      image: '/baby-care.png',
+      link: '/shop/baby'
+    }
+  ];
 
   useEffect(() => {
     fetchUserRole();
@@ -161,158 +185,101 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
-      <div className="space-y-8 px-4 sm:px-0">
-        <section className="text-center">
-          <h1 className="text-4xl font-bold text-primary-700 mb-4">
-            {t('welcome')}
-          </h1>
-        </section>
-
-        <section className="py-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold text-primary-600">{t('Blogs')}</h2>
-            <button 
-              onClick={() => navigate('/resources?tab=articles')}
-              className="flex items-center text-primary-600 hover:text-primary-700"
-            >
-              {t('View all blogs')} 
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </button>
-          </div>
-
-          {loadingBlogs ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="relative h-[80vh] overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="/hero-mother.jpg"
+            alt="Mother and baby"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/30"></div>
+        </div>
+        <div className="relative h-full flex items-center">
+          <div className="container mx-auto px-4">
+            <div className="max-w-2xl">
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+                Supporting Every Step of Your Motherhood Journey
+              </h1>
+              <p className="text-xl text-white/90 mb-8">
+                Discover curated products and resources designed for modern mothers
+              </p>
+              <button
+                onClick={() => navigate('/shop')}
+                className="bg-white text-gray-900 px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors flex items-center space-x-2"
+              >
+                <ShoppingBag className="h-5 w-5" />
+                <span>Shop Now</span>
+              </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {popularBlogs.map(blog => (
-                <div 
-                  key={blog.id} 
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-                  onClick={() => navigate(`/blogs/${blog.id}`)}
-                >
-                  <img 
-                    src={blog.image_url || 'https://via.placeholder.com/400x300'} 
-                    alt={blog.title} 
-                    className="w-full h-48 object-cover"
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Categories */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">
+            Shop by Category
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                className="group cursor-pointer"
+                onClick={() => navigate(category.link)}
+              >
+                <div className="relative overflow-hidden rounded-lg mb-4">
+                  <img
+                    src={category.image}
+                    alt={category.title}
+                    className="w-full h-80 object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-1">
-                      {blog.title}
-                    </h3>
-                    <p className="text-gray-600 mb-4 text-sm line-clamp-2">
-                      {blog.content}
-                    </p>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span className="flex items-center">
-                        <User size={14} className="mr-1" />
-                        {blog.profiles?.username || t('Anonymous')}
-                      </span>
-                      <span className="flex items-center">
-                        <Calendar size={14} className="mr-1" />
-                        {new Date(blog.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors"></div>
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  {category.title}
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  {category.description}
+                </p>
+                <button className="text-primary-600 font-medium flex items-center group-hover:text-primary-700">
+                  Shop Collection <ArrowRight className="ml-2 h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-        <section className="py-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold text-primary-600">{t('Videos')}</h2>
-            <button 
-              onClick={() => navigate('/resources?tab=videos')}
-              className="flex items-center text-primary-600 hover:text-primary-700"
+      {/* New Arrivals */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900">
+              New Arrivals
+            </h2>
+            <button
+              onClick={() => navigate('/shop/new')}
+              className="text-primary-600 font-medium flex items-center hover:text-primary-700"
             >
-              {t('View all videos')} 
-              <ArrowRight className="ml-2 h-4 w-4" />
+              View All <ArrowRight className="ml-2 h-4 w-4" />
             </button>
           </div>
+          {/* Add your product grid here */}
+        </div>
+      </section>
 
-          {loadingVideos ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {popularVideos.map(video => (
-                <div key={video.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <div className="aspect-w-16 aspect-h-9">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${video.youtube_id}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full h-[200px] sm:h-[300px]"
-                    ></iframe>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-1">
-                      {video.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                      {video.description}
-                    </p>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span className="flex items-center">
-                        <User size={14} className="mr-1" />
-                        {video.profiles?.username || t('Anonymous')}
-                      </span>
-                      <span>{video.duration}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="py-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold text-primary-600">{t('Shorts')}</h2>
-            <button 
-              onClick={() => navigate('/resources?tab=shorts')}
-              className="flex items-center text-primary-600 hover:text-primary-700"
-            >
-              {t('View all shorts')} 
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </button>
-          </div>
-
-          {loadingShorts ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {popularShorts.map(short => (
-                <div key={short.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <div className="aspect-w-9 aspect-h-16">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${short.youtube_id}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full h-[160px] sm:h-[200px]"
-                    ></iframe>
-                  </div>
-                  <div className="p-3">
-                    <h3 className="text-sm font-semibold text-gray-800 line-clamp-1">
-                      {short.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {short.profiles?.username || t('Anonymous')}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
+      {/* Resources Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">
+            Pregnancy Resources
+          </h2>
+          {/* Add your resources grid here */}
+        </div>
+      </section>
     </div>
   );
 }
