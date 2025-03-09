@@ -5,54 +5,66 @@ import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { Heart } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 
 const Login = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
 
   useEffect(() => {
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session?.user) {
-        const user = session.user;
-
-        // Check if profile exists
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', user.id)
-          .single();
-
-        // If no profile exists, create one
-        if (!profile) {
-          const { error } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: user.id,
-                username: user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
-                avatar_url: null,
-              }
-            ])
-            .single();
-
-          if (error && error.code !== '23505') { // Ignore unique constraint violations
-            console.error('Error creating profile:', error);
-          }
-        }
-
-        // Redirect to the page they tried to visit or home
-        const from = location.state?.from?.pathname || '/';
-        navigate(from);
+    // Check if user is already logged in
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        handleSuccessfulLogin();
       }
-    });
-
-    // Cleanup subscription on unmount
-    return () => {
-      subscription.unsubscribe();
     };
-  }, [location, navigate]);
+    
+    checkUser();
+    
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          handleSuccessfulLogin();
+        }
+      }
+    );
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+  
+  const handleSuccessfulLogin = () => {
+    // Handle pending actions based on where the user came from
+    const from = location.state?.from?.pathname || '/';
+    const action = location.state?.action;
+    
+    // Handle pending cart item
+    const pendingCartItem = localStorage.getItem('pendingCartItem');
+    if (pendingCartItem) {
+      const product = JSON.parse(pendingCartItem);
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.discountPrice || product.price,
+        image: product.image,
+        quantity: 1
+      });
+      localStorage.removeItem('pendingCartItem');
+      
+      if (action === 'buyNow') {
+        navigate('/checkout');
+        return;
+      }
+    }
+    
+    // Navigate back to where the user came from
+    navigate(from);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
@@ -118,6 +130,7 @@ const Login = () => {
                 },
               }}
               providers={['google']}
+              redirectTo={window.location.origin}
             />
           </div>
         </div>

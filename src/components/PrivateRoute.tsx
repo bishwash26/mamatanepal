@@ -4,9 +4,10 @@ import { supabase } from '../lib/supabase';
 
 interface PrivateRouteProps {
   children: React.ReactNode;
+  requireAuth?: boolean; // New prop to make auth optional
 }
 
-export default function PrivateRoute({ children }: PrivateRouteProps) {
+export default function PrivateRoute({ children, requireAuth = true }: PrivateRouteProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const location = useLocation();
 
@@ -23,10 +24,11 @@ export default function PrivateRoute({ children }: PrivateRouteProps) {
     return <div>Loading...</div>; // Or your loading component
   }
 
-  if (!isAuthenticated) {
-    // Redirect to login while saving the attempted location
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  // If authentication is not required or user is authenticated, render children
+  if (!requireAuth || isAuthenticated) {
+    return <>{children}</>;
   }
 
-  return <>{children}</>;
+  // Redirect to login while saving the attempted location
+  return <Navigate to="/login" state={{ from: location }} replace />;
 } 

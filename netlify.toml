@@ -1,7 +1,20 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
 
+[dev]
+  command = "npm run dev"
+  port = 5174
+  targetPort = 5173
+  framework = "#custom"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Add this redirect for SPA routing
 [[redirects]]
   from = "/*"
   to = "/index.html"

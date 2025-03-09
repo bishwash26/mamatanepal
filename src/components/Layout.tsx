@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Heart, MessageCircle, LogOut, User, Globe, ChevronDown, Menu, X, Home, Video, BookOpen } from 'lucide-react';
+import { Heart, MessageCircle, LogOut, User, Globe, ChevronDown, Menu, X, Home, Video, BookOpen, Calendar, ShoppingBag } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useCart } from '../context/CartContext';
 
 export default function Layout() {
   const { t, i18n } = useTranslation();
@@ -10,6 +11,7 @@ export default function Layout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { totalItems } = useCart();
 
   const handleLogout = async () => {
     try {
@@ -34,7 +36,8 @@ export default function Layout() {
   const mobileNavItems = [
     { path: '/', label: 'home', icon: Home },
     { path: '/resources', label: 'resources', icon: Video },
-    { path: '/discussions', label: 'discussions', icon: MessageCircle }
+    { path: '/discussions', label: 'discussions', icon: MessageCircle },
+    { path: '/pregnancy-guide', label: 'Pregnancy Guide', icon: Calendar }
   ];
 
   return (
@@ -61,6 +64,17 @@ export default function Layout() {
             </div>
 
             <div className="flex items-center space-x-4">
+              <button 
+                onClick={() => navigate('/checkout')}
+                className="relative p-2 text-gray-700 hover:text-primary-600"
+              >
+                <ShoppingBag className="h-6 w-6" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                )}
+              </button>
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}

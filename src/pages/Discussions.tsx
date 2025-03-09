@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
-import { Heart, MessageCircle, Plus, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Heart, MessageCircle, Plus, X, LogIn } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface Post {
   id: string;
@@ -31,6 +31,8 @@ const Discussions = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const fetchPosts = async (page = 0) => {
     try {
@@ -64,7 +66,6 @@ const Discussions = () => {
             author_id
           )
         `)
-        .eq('user_liked.author_id', user?.id)
         .order('created_at', { ascending: false })
         .range(from, to);
 
@@ -117,8 +118,24 @@ const Discussions = () => {
   }, [handleScroll]);
 
   useEffect(() => {
+    checkAuth();
     fetchPosts(currentPage);
   }, [currentPage]);
+
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setIsAuthenticated(!!user);
+  };
+
+  const handleCreatePost = () => {
+    if (!isAuthenticated) {
+      // Redirect to login
+      navigate('/login', { state: { from: location, action: 'createPost' } });
+      return;
+    }
+    
+    setIsModalOpen(true);
+  };
 
   const createPost = async () => {
     console.log("Created post froom here")
@@ -153,20 +170,24 @@ const Discussions = () => {
     fetchPosts();
   };
 
-  const handleLike = async (postId: string) => {
+  const handleLike = async (postId: string, isLiked: boolean) => {
+    if (!isAuthenticated) {
+      // Redirect to login
+      navigate('/login', { state: { from: location, action: 'like' } });
+      return;
+    }
+
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
 
-    const isCurrentlyLiked = likedPosts[postId];
-
     // Optimistically update UI
-    setLikedPosts(prev => ({ ...prev, [postId]: !isCurrentlyLiked }));
+    setLikedPosts(prev => ({ ...prev, [postId]: !isLiked }));
     setPosts(prev => 
       prev.map(post => 
         post.id === postId 
           ? { 
               ...post, 
-              likes: [{ count: post.likes[0].count + (isCurrentlyLiked ? -1 : 1) }]
+              likes: [{ count: post.likes[0].count + (isLiked ? -1 : 1) }]
             }
           : post
       )
@@ -174,7 +195,7 @@ const Discussions = () => {
 
     // Make API call in background
     try {
-      if (isCurrentlyLiked) {
+      if (isLiked) {
         // Unlike
         const { error } = await supabase
           .from('likes')
@@ -200,13 +221,13 @@ const Discussions = () => {
       console.error('Error handling like:', error);
       
       // Revert UI changes on error (optional)
-      setLikedPosts(prev => ({ ...prev, [postId]: isCurrentlyLiked }));
+      setLikedPosts(prev => ({ ...prev, [postId]: isLiked }));
       setPosts(prev => 
         prev.map(post => 
           post.id === postId 
             ? { 
                 ...post, 
-                likes: [{ count: post.likes[0].count + (isCurrentlyLiked ? 1 : -1) }]
+                likes: [{ count: post.likes[0].count + (isLiked ? 1 : -1) }]
               }
             : post
         )
@@ -215,79 +236,100 @@ const Discussions = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white py-8">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-pink-600">
-            {t('Community Discussions')}
-          </h1>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center space-x-2 bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors"
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Login Banner for non-authenticated users */}
+      {isAuthenticated === false && (
+        <div className="bg-primary-50 border-l-4 border-primary-500 p-4 mb-6 flex justify-between items-center">
+          <div>
+            <p className="text-primary-700">{t('Sign in to create posts, like, and comment')}</p>
+          </div>
+          <button 
+            onClick={() => navigate('/login', { state: { from: location } })}
+            className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
           >
-            <Plus size={20} />
-            <span>{t('New Post')}</span>
+            <LogIn size={16} />
+            <span>{t('Sign In')}</span>
           </button>
         </div>
+      )}
 
-        {/* Posts List */}
-        <div className="space-y-6">
-          {posts.map((post) => (
-            <div 
-              key={post.id} 
-              className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => navigate(`/discussions/${post.id}`)}
-            >
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">{post.title}</h2>
-              <p className="text-gray-800 mb-4">{post.content}</p>
-              <div className="flex justify-between items-center text-sm text-gray-600">
-                <div className="flex items-center space-x-4">
-                  <span>
-                    {post.is_anonymous
-                      ? t('Anonymous')
-                      : post.author_name || t('User')}
-                  </span>
-                  <span>{new Date(post.created_at).toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <button 
-                    className={`flex items-center space-x-2 p-1 rounded-lg transition-colors ${
-                      likedPosts[post.id] ? 'text-pink-600' : 'hover:text-pink-600'
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLike(post.id);
-                    }}
-                  >
-                    <Heart 
-                      size={20}
-                      className={likedPosts[post.id] ? 'fill-current' : ''}
-                    />
-                    <span className="text-base">{post.likes?.[0]?.count || 0}</span>
-                  </button>
-                  <button 
-                    className="flex items-center space-x-2 p-1 rounded-lg hover:text-pink-600"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MessageCircle size={20} />
-                    <span className="text-base">{post.comments?.[0]?.count || 0}</span>
-                  </button>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">
+          {t('Discussions')}
+        </h1>
+        <button
+          onClick={handleCreatePost}
+          className="flex items-center space-x-2 bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors"
+        >
+          <Plus size={20} />
+          <span>{t('Create Post')}</span>
+        </button>
+      </div>
+
+      {/* Posts List */}
+      <div className="space-y-6">
+        {posts.map((post) => (
+          <div
+            key={post.id}
+            className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate(`/discussions/${post.id}`)}
+          >
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              {post.title}
+            </h2>
+            <p className="text-gray-700 mb-4 line-clamp-3">{post.content}</p>
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <div className="flex items-center space-x-4">
+                <span>
+                  {post.is_anonymous
+                    ? t('Anonymous')
+                    : post.author_name || t('User')}
+                </span>
+                <span>{new Date(post.created_at).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLike(post.id, post.user_has_liked);
+                  }}
+                  className={`flex items-center space-x-1 transition-colors ${
+                    post.user_has_liked ? 'text-pink-600' : 'hover:text-pink-600'
+                  }`}
+                >
+                  <Heart 
+                    size={16} 
+                    className={post.user_has_liked ? 'fill-current' : ''} 
+                  />
+                  <span>{post.likes?.[0]?.count || 0}</span>
+                </button>
+                <div className="flex items-center space-x-1 text-pink-600">
+                  <MessageCircle size={16} />
+                  <span>{post.comments?.[0]?.count || 0}</span>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-
-        {loading && currentPage > 0 && (
-          <div className="flex justify-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600"></div>
           </div>
-        )}
+        ))}
       </div>
+
+      {/* Load More Button */}
+      {hasMore && (
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            disabled={loading}
+            className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50"
+          >
+            {loading ? t('Loading...') : t('Load More')}
+          </button>
+        </div>
+      )}
 
       {/* Create Post Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-lg w-full p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-semibold text-gray-800">
