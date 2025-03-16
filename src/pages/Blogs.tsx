@@ -17,7 +17,8 @@ interface Blog {
   author_credit: string | null;
 }
 
-const truncateContent = (content: string, wordLimit: number = 300) => {
+// Function to truncate content to a specific word limit
+const truncateContent = (content: string, wordLimit: number = 0) => {
   const words = content.split(' ');
   const isTruncated = words.length > wordLimit;
   const truncatedContent = isTruncated 
@@ -71,19 +72,22 @@ const Blogs = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="text-center">
+          <p className="text-gray-500">{t('Loading...')}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('Pregnancy Resources')}</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="max-w-6xl mx-auto px-4 py-12">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('Blogs & Articles')}</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {blogs.map((blog) => {
-          const { content: truncatedContent, isTruncated } = truncateContent(blog.content);
+          // Truncate content to 50 words
+          const { content: truncatedContent, isTruncated } = truncateContent(blog.content, 50);
           
           return (
             <article 
@@ -91,21 +95,26 @@ const Blogs = () => {
               className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
             >
               {blog.image_url && (
-                <img 
-                  src={blog.image_url} 
-                  alt={blog.title}
-                  className="w-full h-48 object-cover"
-                />
+                <div className="h-48 overflow-hidden">
+                  <img
+                    src={blog.image_url}
+                    alt={blog.title}
+                    className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder.png';
+                    }}
+                  />
+                </div>
               )}
               <div className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  {blog.title}
+                <h2 className="text-xl font-semibold text-gray-900 mb-3 hover:text-primary-600">
+                  <a onClick={() => navigate(`/blogs/${blog.id}`)} className="cursor-pointer">
+                    {blog.title}
+                  </a>
                 </h2>
-                <div className="h-24 mb-4"> {/* Fixed height container for content */}
-                  <p 
-                    className="text-gray-600"
-                    style={truncateStyle}
-                  >
+                <div className="mb-4">
+                  <p className="text-gray-700 line-clamp-3">
                     {truncatedContent}
                   </p>
                 </div>
@@ -114,7 +123,7 @@ const Blogs = () => {
                     onClick={() => navigate(`/blogs/${blog.id}`)}
                     className="text-primary-600 hover:text-primary-700 font-medium block mb-4"
                   >
-                    {t('readMore')} →
+                    {t('Read More')} →
                   </button>
                 )}
                 <div className="flex items-center justify-between text-sm text-gray-500">

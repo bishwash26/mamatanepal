@@ -7,6 +7,16 @@ import CreateBlog from '../components/CreateBlog';
 import CreateVideo from '../components/CreateVideo';
 import CreateShort from '../components/CreateShort';
 
+// Function to truncate content to a specific word limit
+const truncateContent = (content: string, wordLimit: number = 50) => {
+  const words = content.split(' ');
+  const isTruncated = words.length > wordLimit;
+  const truncatedContent = isTruncated 
+    ? words.slice(0, wordLimit).join(' ') + '...'
+    : content;
+  return { content: truncatedContent, isTruncated };
+};
+
 interface Blog {
   id: string;
   title: string;
@@ -17,6 +27,7 @@ interface Blog {
   profiles: {
     username: string;
   };
+  author_credit: string | null;
 }
 
 interface Video {
@@ -281,40 +292,47 @@ export default function Resources() {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
             </div>
           ) : blogs.length > 0 ? (
-            blogs.map(blog => (
-              <article key={blog.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="md:flex">
-                  <div className="md:flex-shrink-0">
-                    <img 
-                      className="h-48 w-full md:w-64 object-cover" 
-                      src={blog.image_url || 'https://via.placeholder.com/400x300'} 
-                      alt={blog.title}
-                    />
-                  </div>
-                  <div className="p-8">
-                    <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-                      {blog.title}
-                    </h2>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span className="flex items-center">
-                        <User size={14} className="mr-1" />
-                        {blog.author_credit || blog.profiles?.username || t('Anonymous')}
-                      </span>
-                      <span>{new Date(blog.created_at).toLocaleDateString()}</span>
+            blogs.map(blog => {
+              // Truncate content to 50 words
+              const { content: truncatedContent, isTruncated } = truncateContent(blog.content, 50);
+              
+              return (
+                <article key={blog.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <div className="md:flex">
+                    <div className="md:flex-shrink-0">
+                      <img 
+                        className="h-48 w-full md:w-64 object-cover" 
+                        src={blog.image_url || 'https://via.placeholder.com/400x300'} 
+                        alt={blog.title}
+                      />
                     </div>
-                    <p className="text-gray-600 mb-4">
-                      {blog.content}
-                    </p>
-                    <button 
-                      onClick={() => navigate(`/blogs/${blog.id}`)}
-                      className="text-primary-600 hover:text-primary-700 font-medium"
-                    >
-                      {t('readMore')} →
-                    </button>
+                    <div className="p-8">
+                      <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                        {blog.title}
+                      </h2>
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <span className="flex items-center">
+                          <User size={14} className="mr-1" />
+                          {blog.author_credit || blog.profiles?.username || t('Anonymous')}
+                        </span>
+                        <span>{new Date(blog.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-gray-600 mb-4">
+                        {truncatedContent}
+                      </p>
+                      {isTruncated && (
+                        <button 
+                          onClick={() => navigate(`/blogs/${blog.id}`)}
+                          className="text-primary-600 hover:text-primary-700 font-medium"
+                        >
+                          {t('readMore')} →
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))
+                </article>
+              );
+            })
           ) : (
             <div className="text-center py-12">
               <p className="text-gray-500 text-lg">
