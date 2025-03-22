@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Heart, MessageCircle, LogOut, User, Globe, ChevronDown, Menu, X, Home, Video, BookOpen, Calendar, ShoppingBag } from 'lucide-react';
@@ -8,10 +8,23 @@ import { useCart } from '../context/CartContext';
 export default function Layout() {
   const { t, i18n } = useTranslation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { totalItems } = useCart();
+
+
+  useEffect(()=>{
+        // Check if user is already logged in
+        const checkUser = async () => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            setIsLoggedIn(true);
+          }
+        };
+        checkUser();
+  })
 
   const handleLogout = async () => {
     try {
@@ -75,6 +88,7 @@ export default function Layout() {
                   </span>
                 )}
               </button>
+              {isLoggedIn && (
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -105,7 +119,8 @@ export default function Layout() {
                   </div>
                 )}
               </div>
-            </div>
+              )}
+              </div>
 
             {/* Mobile menu button */}
             <div className="flex items-center sm:hidden">
@@ -121,6 +136,7 @@ export default function Layout() {
       </nav>
 
       {/* Mobile Header - Fixed */}
+      {isLoggedIn && (
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 sm:hidden z-40 h-14">
         <div className="flex justify-between items-center h-full px-4">
           <h1 className="text-xl font-bold text-primary-600">{t('Mamata Nepal')}</h1>
@@ -155,6 +171,7 @@ export default function Layout() {
           </div>
         )}
       </div>
+      )}
 
       {/* Main Content - Add padding for mobile header and bottom nav */}
       <main className="flex-1 pt-16 pb-16 sm:pt-0 sm:pb-0">
