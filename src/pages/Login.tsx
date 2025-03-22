@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Heart, Eye, EyeOff, Mail, Lock, LogIn, CheckCircle, AlertCircle, X } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Heart, Eye, EyeOff, Mail, Lock, LogIn, CheckCircle, AlertCircle, X, XCircle, Save } from 'lucide-react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { supabase } from '../lib/supabase';
 
@@ -17,22 +17,36 @@ const Login = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { addToCart } = useCart();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [view, setView] = useState<ViewType>('sign_in');
   const [notification, setNotification] = useState<Notification | null>(null);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
 
   // Password validation states
   const [passwordLengthValid, setPasswordLengthValid] = useState(false);
   const [passwordUppercaseValid, setPasswordUppercaseValid] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(false);
+
+  // New password validation states
+  const [newPasswordLengthValid, setNewPasswordLengthValid] = useState(false);
+  const [newPasswordUppercaseValid, setNewPasswordUppercaseValid] = useState(false);
+  const [newPasswordsMatch, setNewPasswordsMatch] = useState(false);
 
   useEffect(() => {
     // Check password requirements
@@ -40,6 +54,13 @@ const Login = () => {
     setPasswordUppercaseValid(/[A-Z]/.test(password));
     setPasswordsMatch(password === confirmPassword);
   }, [password, confirmPassword]);
+
+  useEffect(() => {
+    // Check password requirements for new password
+    setNewPasswordLengthValid(newPassword.length >= 8);
+    setNewPasswordUppercaseValid(/[A-Z]/.test(newPassword));
+    setNewPasswordsMatch(newPassword === confirmNewPassword);
+  }, [newPassword, confirmNewPassword]);
 
   // Notification timeout
   useEffect(() => {
@@ -75,6 +96,40 @@ const Login = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
+  }, []);
+
+  useEffect(() => {
+    // Check for recovery mode in query params
+    const loginMode = searchParams.get('loginMode');
+    if (loginMode === 'recovery') {
+      setShowPasswordResetModal(true);
+      
+      // Log for debugging
+      console.log("Recovery mode detected, showing password reset modal");
+    }
+  }, [searchParams]);
+
+  // Add special handling for hash fragment which might contain the access token
+  useEffect(() => {
+    // When arriving from a password reset email, check if there's a hash in the URL
+    // This is where Supabase puts the access token
+    const hash = window.location.hash;
+    const queryParams = new URLSearchParams(window.location.search);
+    const loginMode = queryParams.get('loginMode');
+    
+    if (hash && hash.includes('access_token') && loginMode === 'recovery') {
+      console.log("Access token found in URL with recovery mode, showing password reset modal");
+      setShowPasswordResetModal(true);
+      
+      // Store the fact that we're in recovery mode
+      localStorage.setItem('passwordRecoveryMode', 'true');
+    }
+    
+    // Check local storage if we were in recovery mode but the modal was closed
+    const recoveryMode = localStorage.getItem('passwordRecoveryMode');
+    if (recoveryMode === 'true' && loginMode === 'recovery') {
+      setShowPasswordResetModal(true);
+    }
   }, []);
   
   const showNotification = (type: NotificationType, message: string) => {
@@ -228,6 +283,77 @@ const Login = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetPasswordLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+        redirectTo: `${window.location.origin}/?loginMode=recovery`,
+      });
+      
+      if (error) throw error;
+      
+      // Show success notification
+      showNotification('success', t('Password reset link sent to your email. Please check your inbox.'));
+      
+      // Close the modal and clear the email
+      setShowForgotPasswordModal(false);
+      setForgotPasswordEmail('');
+    } catch (err) {
+      const error = err as Error;
+      showNotification('error', error.message || t('Failed to send password reset email.'));
+    } finally {
+      setResetPasswordLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    // Validate new password
+    if (!newPasswordLengthValid || !newPasswordUppercaseValid) {
+      showNotification('error', t('Password must be at least 8 characters with at least one uppercase letter'));
+      return;
+    }
+
+    if (!newPasswordsMatch) {
+      showNotification('error', t('Passwords do not match'));
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+      
+      // Success message for password update
+      showNotification('success', t('Your password has been updated successfully. You can now sign in with your new password.'));
+      
+      // Clear the form and close the modal
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setShowPasswordResetModal(false);
+      
+      // Clear recovery mode from localStorage
+      localStorage.removeItem('passwordRecoveryMode');
+      
+      // Remove the query parameter
+      navigate('/', { replace: true });
+      
+    } catch (err) {
+      const error = err as Error;
+      showNotification('error', error.message || t('Failed to update password.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Notification component
   const NotificationComponent = () => {
     if (!notification) return null;
@@ -268,8 +394,245 @@ const Login = () => {
     );
   };
 
+  // Forgot Password Modal Component
+  const ForgotPasswordModal = () => {
+    if (!showForgotPasswordModal) return null;
+    
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          {/* Background overlay */}
+          <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+          </div>
+          
+          {/* Modal panel */}
+          <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div className="absolute top-0 right-0 pt-4 pr-4">
+              <button
+                type="button"
+                className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none"
+                onClick={() => setShowForgotPasswordModal(false)}
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="sm:flex sm:items-start">
+              <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  {t('Reset Password')}
+                </h3>
+                
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                      {t('Email Address')}
+                    </label>
+                    <div className="mt-1 relative rounded-md shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Mail className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="email"
+                        id="email"
+                        value={forgotPasswordEmail}
+                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                        required
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pink-500 focus:border-pink-500"
+                        placeholder="you@example.com"
+                      />
+                    </div>
+                    <p className="mt-2 text-sm text-gray-600">
+                      {t('We\'ll send a password reset link to this email address')}
+                    </p>
+                  </div>
+                  
+                  <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button
+                      type="submit"
+                      disabled={resetPasswordLoading}
+                      className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-pink-600 text-base font-medium text-white hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 sm:ml-3 sm:w-auto sm:text-sm ${
+                        resetPasswordLoading ? 'opacity-70 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {resetPasswordLoading ? t('Sending...') : t('Send Reset Link')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPasswordModal(false)}
+                      className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 sm:mt-0 sm:w-auto sm:text-sm"
+                    >
+                      {t('Cancel')}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Password Reset Modal Component
+  const PasswordResetModal = () => {
+    if (!showPasswordResetModal) return null;
+    
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          {/* Background overlay */}
+          <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+          </div>
+          
+          {/* Modal panel */}
+          <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div className="absolute top-0 right-0 pt-4 pr-4">
+              <button
+                type="button"
+                className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none"
+                onClick={() => {
+                  setShowPasswordResetModal(false);
+                  navigate('/', { replace: true });
+                }}
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="sm:flex sm:items-start">
+              <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  {t('Set New Password')}
+                </h3>
+                
+                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  {/* New Password Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('New Password (min 8 characters, 1 uppercase)')}
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        {showNewPassword ? 
+                          <EyeOff className="h-5 w-5 text-gray-400" /> : 
+                          <Eye className="h-5 w-5 text-gray-400" />
+                        }
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Confirm New Password Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('Confirm New Password')}
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type={showConfirmNewPassword ? "text" : "password"}
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        required
+                        className={`block w-full pl-10 pr-10 py-2 border ${
+                          confirmNewPassword && !newPasswordsMatch ? 'border-red-300' : 'border-gray-300'
+                        } rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500`}
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                      >
+                        {showConfirmNewPassword ? 
+                          <EyeOff className="h-5 w-5 text-gray-400" /> : 
+                          <Eye className="h-5 w-5 text-gray-400" />
+                        }
+                      </button>
+                    </div>
+                    {confirmNewPassword && !newPasswordsMatch && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {t('Passwords do not match')}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Password validation indicators */}
+                  <div className="space-y-2">
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <div className={`flex items-center ${newPasswordLengthValid ? 'text-green-600' : 'text-gray-500'}`}>
+                        <span className={`inline-block w-2 h-2 mr-2 rounded-full ${newPasswordLengthValid ? 'bg-green-600' : 'bg-gray-300'}`}></span>
+                        {t('At least 8 characters')}
+                      </div>
+                      <div className={`flex items-center ${newPasswordUppercaseValid ? 'text-green-600' : 'text-gray-500'}`}>
+                        <span className={`inline-block w-2 h-2 mr-2 rounded-full ${newPasswordUppercaseValid ? 'bg-green-600' : 'bg-gray-300'}`}></span>
+                        {t('At least one uppercase letter')}
+                      </div>
+                      <div className={`flex items-center ${newPasswordsMatch ? 'text-green-600' : 'text-gray-500'}`}>
+                        <span className={`inline-block w-2 h-2 mr-2 rounded-full ${newPasswordsMatch ? 'bg-green-600' : 'bg-gray-300'}`}></span>
+                        {t('Passwords match')}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button
+                      type="submit"
+                      disabled={loading || !newPasswordLengthValid || !newPasswordUppercaseValid || !newPasswordsMatch}
+                      className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-pink-600 text-base font-medium text-white hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 sm:ml-3 sm:w-auto sm:text-sm ${
+                        loading || !newPasswordLengthValid || !newPasswordUppercaseValid || !newPasswordsMatch ? 'opacity-70 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      <Save className="h-5 w-5 mr-2" />
+                      {loading ? t('Updating...') : t('Update Password')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPasswordResetModal(false);
+                        navigate('/', { replace: true });
+                      }}
+                      className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 sm:mt-0 sm:w-auto sm:text-sm"
+                    >
+                      {t('Cancel')}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal />
+      
+      {/* Password Reset Modal */}
+      <PasswordResetModal />
+      
       {/* Hero Section with Background Image */}
       <div className="relative min-h-screen">
         {/* Background Image */}
@@ -477,7 +840,8 @@ const Login = () => {
                 <div className="mt-3 text-sm text-center">
                   <button 
                     className="text-pink-600 hover:text-pink-700"
-                    onClick={() => {/* Add forgot password functionality */}}
+                    onClick={() => setShowForgotPasswordModal(true)}
+                    type="button"
                   >
                     {t('Forgot your password?')}
                   </button>
