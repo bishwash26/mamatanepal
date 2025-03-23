@@ -20,7 +20,8 @@ const resources = {
       "videos": "Videos",
       "shorts": "Shorts",
       "watchNow": "Watch Now",
-      "shareResource": "Share Resource"
+      "shareResource": "Share Resource",
+      "about": "About"
     }
   },
   ne: {
@@ -41,7 +42,8 @@ const resources = {
       "videos": "भिडियोहरू",
       "shorts": "शर्ट्स",
       "watchNow": "अहिले हेर्नुहोस्",
-      "shareResource": "साझा गर्नुहोस्"
+      "shareResource": "साझा गर्नुहोस्",
+      "about": "हाम्रोबारे"
     }
   }
 };

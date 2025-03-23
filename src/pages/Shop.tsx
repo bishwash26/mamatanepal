@@ -24,7 +24,7 @@ export default function Shop() {
       id: 'baby',
       title: 'Baby Care',
       description: 'Premium products for your little one',
-      image: '/baby-care.png',
+      image: '/baby-care3.png',
     },
     {
       id: 'wellness',

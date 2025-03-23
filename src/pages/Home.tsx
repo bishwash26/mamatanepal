@@ -96,7 +96,7 @@ export default function Home() {
       id: 3,
       title: 'Baby Care',
       description: 'Premium products for your little one',
-      image: '/baby-care.png',
+      image: '/baby-care3.jpg',
       link: '/shop/baby'
     }
   ];

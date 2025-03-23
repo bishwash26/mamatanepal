@@ -50,7 +50,8 @@ export default function Layout() {
     { path: '/', label: 'home', icon: Home },
     { path: '/resources', label: 'resources', icon: Video },
     { path: '/discussions', label: 'discussions', icon: MessageCircle },
-    { path: '/pregnancy-guide', label: 'Pregnancy Guide', icon: Calendar }
+    { path: '/pregnancy-guide', label: 'Pregnancy Guide', icon: Calendar },
+    { path: '/about', label: 'about', icon: User }
   ];
 
   return (
@@ -72,6 +73,9 @@ export default function Layout() {
                 </Link>
                 <Link to="/discussions" className="text-gray-600 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                   {t('discussions')}
+                </Link>
+                <Link to="/about" className="text-gray-600 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                  {t('about')}
                 </Link>
               </div>
             </div>

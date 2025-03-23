@@ -16,6 +16,7 @@ import Checkout from './pages/Checkout';
 import { CartProvider } from './context/CartContext';
 import OrderConfirmation from './pages/OrderConfirmation';
 import PaymentFailed from './pages/PaymentFailed';
+import About from './pages/About';
 import './i18n';
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
             <Route path="pregnancy-guide" element={<PregnancyGuide />} />
             <Route path="shop" element={<Shop />} />
             <Route path="shop/:categoryId" element={<ProductListing />} />
+            <Route path="about" element={<About />} />
             
             {/* Protected routes */}
             <Route path="checkout" element={
