@@ -74,7 +74,6 @@ export default function Layout() {
     { path: '/', label: 'Home', icon: Home },
     { path: '/resources', label: 'Resources', icon: Video },
     { path: '/discussions', label: 'Discussions', icon: MessageCircle },
-    { path: '/pregnancy-guide', label: 'Pregnancy Guide', icon: Calendar },
     { path: '/about', label: 'About', icon: User }
   ];
 
