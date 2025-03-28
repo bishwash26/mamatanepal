@@ -1,30 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Heart, MessageCircle, LogOut, User, Globe, ChevronDown, Menu, X, Home, Video, BookOpen, Calendar, ShoppingBag } from 'lucide-react';
+import { Heart, MessageCircle, LogOut, User, Globe, ChevronDown, Menu, X, Home, Video, BookOpen, Calendar, ShoppingBag, LogIn } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useCart } from '../context/CartContext';
+import { LANGUAGE_STORAGE_KEY } from '../i18n';
+import { useAuth } from '../context/AuthContext.tsx';
 
 export default function Layout() {
   const { t, i18n } = useTranslation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { totalItems } = useCart();
+  const { user } = useAuth(); // Use AuthContext instead of direct calls
+  const isLoggedIn = !!user; // Derive logged in state from user object
 
+  // Force English as default language if no preference exists
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (!savedLanguage) {
+      i18n.changeLanguage('en');
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, 'en');
+    }
+  }, []);
 
-  useEffect(()=>{
-        // Check if user is already logged in
-        const checkUser = async () => {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            setIsLoggedIn(true);
-          }
-        };
-        checkUser();
-  })
+  // Update HTML lang attribute whenever language changes
+  useEffect(() => {
+    document.documentElement.setAttribute('lang', i18n.language);
+  }, [i18n.language]);
 
   const handleLogout = async () => {
     try {
@@ -39,6 +44,8 @@ export default function Layout() {
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'ne' : 'en';
     i18n.changeLanguage(newLang);
+    // Save language preference to localStorage
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, newLang);
     setIsProfileOpen(false);
   };
 
@@ -92,38 +99,63 @@ export default function Layout() {
                   </span>
                 )}
               </button>
-              {isLoggedIn && (
+              
+              {/* User Menu Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
                 >
                   <User className="h-5 w-5" />
-                  <span>Profile</span>
-                  <ChevronDown className="h-4 w-4" />
+                  {isLoggedIn ? (
+                    <>
+                      <span>Profile</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </>
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
                 </button>
 
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-primary-100">
-                    <div className="px-4 py-2 border-b border-primary-100">
-                      <div className="text-sm font-medium text-gray-900">user@example.com</div>
+                    {/* Language Switcher in Dropdown */}
+                    <div 
+                      className="px-4 py-2 hover:bg-primary-50 cursor-pointer flex items-center space-x-2" 
+                      onClick={toggleLanguage}
+                    >
+                      <Globe className="h-4 w-4 text-primary-600" />
+                      <span className="text-sm">
+                        {i18n.language === 'en' ? 'Switch to Nepali' : 'Switch to English'}
+                      </span>
                     </div>
-                    <div className="px-4 py-2 hover:bg-primary-50 cursor-pointer" onClick={toggleLanguage}>
-                      <div className="flex items-center space-x-2 text-sm text-gray-700">
-                        <Globe className="h-4 w-4" />
-                        <span>{t('switchLanguage')}</span>
+
+                    {isLoggedIn ? (
+                      <>
+                        <div className="px-4 py-2 border-b border-primary-100">
+                          <div className="text-sm font-medium text-gray-900">user@example.com</div>
+                        </div>
+                        <div className="px-4 py-2 hover:bg-primary-50 cursor-pointer text-red-600" onClick={handleLogout}>
+                          <div className="flex items-center space-x-2 text-sm">
+                            <LogOut className="h-4 w-4" />
+                            <span>Logout</span>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div 
+                        className="px-4 py-2 hover:bg-primary-50 cursor-pointer" 
+                        onClick={() => navigate('/login')}
+                      >
+                        <div className="flex items-center space-x-2 text-sm">
+                          <LogIn className="h-4 w-4 text-primary-600" />
+                          <span>Login</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="px-4 py-2 hover:bg-primary-50 cursor-pointer text-red-600" onClick={handleLogout}>
-                      <div className="flex items-center space-x-2 text-sm">
-                        <LogOut className="h-4 w-4" />
-                        <span>{t('logout')}</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
-              )}
               </div>
 
             {/* Mobile menu button */}
@@ -140,11 +172,21 @@ export default function Layout() {
       </nav>
 
       {/* Mobile Header - Fixed */}
-      {isLoggedIn && (
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 sm:hidden z-40 h-14">
         <div className="flex justify-between items-center h-full px-4">
-          <h1 className="text-xl font-bold text-primary-600">{t('Mamata Nepal')}</h1>
+          <h1 className="text-xl font-bold text-primary-600">Mamata Nepal</h1>
           <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigate('/checkout')}
+              className="relative p-2 text-gray-700 hover:text-primary-600"
+            >
+              <ShoppingBag className="h-6 w-6" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </button>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="p-2 rounded-full hover:bg-gray-100"
@@ -157,25 +199,36 @@ export default function Layout() {
         {isProfileOpen && (
           <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 py-2 px-4 shadow-lg">
             <div className="space-y-3">
+              {/* Language Toggle */}
               <button
                 onClick={toggleLanguage}
-                className="flex items-center space-x-2 w-full py-2 hover:bg-primary-50 rounded-lg"
+                className="flex items-center space-x-2 w-full py-2 hover:bg-gray-50 rounded-lg"
               >
-                <Globe size={20} />
-                <span>{i18n.language === 'en' ? 'नेपाली' : 'English'}</span>
+                <Globe size={20} className="text-primary-600" />
+                <span>{i18n.language === 'en' ? 'Switch to Nepali' : 'Switch to English'}</span>
               </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 text-red-600 w-full py-2 hover:bg-red-50 rounded-lg"
-              >
-                <LogOut size={20} />
-                <span>{t('logout')}</span>
-              </button>
+              
+              {isLoggedIn ? (
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2 text-red-600 w-full py-2 hover:bg-red-50 rounded-lg"
+                >
+                  <LogOut size={20} />
+                  <span>Logout</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate('/login')}
+                  className="flex items-center space-x-2 text-primary-600 w-full py-2 hover:bg-primary-50 rounded-lg"
+                >
+                  <LogIn size={20} />
+                  <span>Login</span>
+                </button>
+              )}
             </div>
           </div>
         )}
       </div>
-      )}
 
       {/* Main Content - Add padding for mobile header and bottom nav */}
       <main className="flex-1 pt-16 pb-16 sm:pt-0 sm:pb-0">
@@ -184,7 +237,7 @@ export default function Layout() {
 
       {/* Mobile Bottom Navigation - Fixed */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 sm:hidden z-50">
-        <div className="grid grid-cols-3 h-16">
+        <div className="grid grid-cols-4 h-16">
           {mobileNavItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -198,7 +251,7 @@ export default function Layout() {
                 }`}
               >
                 <Icon size={20} />
-                <span className="text-xs">{t(item.label)}</span>
+                <span className="text-xs">{item.label}</span>
               </Link>
             );
           })}

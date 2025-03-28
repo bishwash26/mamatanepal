@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { Heart, MessageCircle, Plus, X, LogIn } from 'lucide-react';
@@ -35,8 +35,17 @@ const Discussions = () => {
   const location = useLocation();
 
   const {user} = useAuth();
+  
+  // Cache user ID for post operations
+  const userId = useMemo(() => user?.id, [user]);
 
-  const fetchPosts = async (page = 0) => {
+  // Add user dependency to fetch posts when user changes
+  useEffect(() => {
+    fetchPosts(0); // Reset to first page when user changes
+    setCurrentPage(0);
+  }, [userId]);
+
+  const fetchPosts = useCallback(async (page = 0) => {
     try {
       setLoading(true);
       const from = page * POSTS_PER_PAGE;
@@ -78,12 +87,12 @@ const Discussions = () => {
           comments: [{ count: Array.isArray(post.comments) ? post.comments.length : 0 }],
           author_name: post.profiles && typeof post.profiles === 'object' ? 
             (post.profiles as any).username : undefined,
-          user_has_liked: post.user_liked?.some(like => like.author_id === user?.id)
+          user_has_liked: post.user_liked?.some(like => like.author_id === userId)
         }));
 
         // Set liked status
         const likedMap = posts.reduce((acc: Record<string, boolean>, post) => {
-          acc[post.id] = post.user_liked?.some(like => like.author_id === user?.id) || false;
+          acc[post.id] = post.user_liked?.some(like => like.author_id === userId) || false;
           return acc;
         }, {});
         setLikedPosts(likedMap);
@@ -100,8 +109,9 @@ const Discussions = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
+  // Update handleScroll to use the memoized fetchPosts function
   const handleScroll = useCallback(() => {
     if (
       window.innerHeight + document.documentElement.scrollTop
@@ -119,9 +129,10 @@ const Discussions = () => {
   }, [handleScroll]);
 
   useEffect(() => {
-    fetchPosts(currentPage);
-  }, [currentPage]);
-
+    if (currentPage > 0) { // Only fetch more pages
+      fetchPosts(currentPage);
+    }
+  }, [currentPage, fetchPosts]);
 
   const handleCreatePost = () => {
     if (!user) {
@@ -137,7 +148,7 @@ const Discussions = () => {
     console.log("Created post froom here")
     if (!newPostTitle.trim() || !newPostContent.trim()) return;
 
-    if (!user) return;
+    if (!userId) return;
 
     console.log("user is logged in", user);
 
@@ -147,7 +158,7 @@ const Discussions = () => {
         {
           title: newPostTitle.trim(),
           content: newPostContent.trim(),
-          author_id: user.id,
+          author_id: userId,
           is_anonymous: isAnonymous,
         },
       ]);
@@ -161,11 +172,11 @@ const Discussions = () => {
     setNewPostTitle('');
     setNewPostContent('');
     setIsAnonymous(false);
-    fetchPosts();
+    fetchPosts(0);
   };
 
   const handleLike = async (postId: string, isLiked: boolean) => {
-    if (!user) {
+    if (!userId) {
       // Redirect to login
       navigate('/login', { state: { from: location, action: 'like' } });
       return;
@@ -192,7 +203,7 @@ const Discussions = () => {
           .from('likes')
           .delete()
           .eq('post_id', postId)
-          .eq('author_id', user.id);
+          .eq('author_id', userId);
 
         if (error) throw error;
       } else {
@@ -202,7 +213,7 @@ const Discussions = () => {
           .insert([
             {
               post_id: postId,
-              author_id: user.id,
+              author_id: userId,
             },
           ]);
 

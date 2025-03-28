@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { Heart, MessageCircle, Send, LogIn } from 'lucide-react';
+import { useAuth } from '../context/AuthContext.tsx';
 
 interface Comment {
   id: string;
@@ -38,9 +39,13 @@ const PostDetails = () => {
   const [newComment, setNewComment] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use AuthContext instead of direct calls
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
+  const userId = useMemo(() => user?.id, [user]);
 
   useEffect(() => {
     if (!id) {
@@ -49,22 +54,15 @@ const PostDetails = () => {
       return;
     }
     
-    checkAuth();
     fetchPost();
     fetchComments();
-  }, [id]);
+  }, [id, userId]); // Add userId as dependency to refetch when user changes
 
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setIsAuthenticated(!!user);
-  };
-
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     if (!id) return;
     
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
       
       let query = supabase
         .from('posts')
@@ -78,7 +76,7 @@ const PostDetails = () => {
         .eq('id', id);
         
       // Only check if user has liked if they're logged in
-      if (user) {
+      if (userId) {
         query = supabase
           .from('posts')
           .select(`
@@ -90,7 +88,7 @@ const PostDetails = () => {
             user_has_liked: likes!left(id)
           `)
           .eq('id', id)
-          .eq('likes.author_id', user.id);
+          .eq('likes.author_id', userId);
       }
 
       const { data, error: fetchError } = await query.single();
@@ -110,9 +108,9 @@ const PostDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, userId]);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     if (!id) return;
     
     try {
@@ -136,10 +134,10 @@ const PostDetails = () => {
     } catch (err) {
       console.error('Error in fetchComments:', err);
     }
-  };
+  }, [id]);
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || !userId) return;
 
     const { error } = await supabase
       .from('comments')
@@ -147,7 +145,7 @@ const PostDetails = () => {
         {
           content: newComment.trim(),
           post_id: id,
-          author_id: user.id,
+          author_id: userId,
         },
       ]);
 
@@ -161,51 +159,44 @@ const PostDetails = () => {
   };
 
   const handleLike = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!userId) {
       // Redirect to login
       navigate('/login', { state: { from: location, action: 'like' } });
       return;
     }
 
-    if (isLiked) {
-      // Unlike
-      const { error } = await supabase
-        .from('likes')
-        .delete()
-        .eq('post_id', id)
-        .eq('author_id', user.id);
+    // Optimistically update UI
+    setIsLiked(!isLiked);
+    setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
 
-      if (error) {
-        console.error('Error unliking post:', error);
-        return;
-      }
-
-      setIsLiked(false);
+    try {
       if (isLiked) {
-        setLikeCount(prev => prev-1);
-      }
-      else {
-        setLikeCount(prev => prev+1);
-      }
-    } else {
-      // Like
-      const { error } = await supabase
-        .from('likes')
-        .insert([
-          {
-            post_id: id,
-            author_id: user.id,
-          },
-        ]);
+        // Unlike
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('post_id', id)
+          .eq('author_id', userId);
 
-      if (error) {
-        console.error('Error liking post:', error);
-        return;
-      }
+        if (error) throw error;
+      } else {
+        // Like
+        const { error } = await supabase
+          .from('likes')
+          .insert([
+            {
+              post_id: id,
+              author_id: userId,
+            },
+          ]);
 
-      setIsLiked(true);
-      setLikeCount(prev => prev + 1);
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error handling like:', error);
+      // Revert UI changes on error
+      setIsLiked(!isLiked);
+      setLikeCount(prev => isLiked ? prev + 1 : prev - 1);
     }
   };
 

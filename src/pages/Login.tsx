@@ -74,20 +74,6 @@ const Login = () => {
     }
   }, [notification]);
 
-  useEffect(() => {
-    // Check if user is already logged in
-    const { user } = useAuth();
-    if (user) {
-      handleSuccessfulLogin();
-    }
-    
-    // Check for recovery mode in query params
-    const loginMode = searchParams.get('loginMode');
-    if (loginMode === 'recovery') {
-      setShowPasswordResetModal(true);
-    }
-  }, [searchParams]);
-  
   const showNotification = (type: NotificationType, message: string) => {
     setNotification({ type, message });
   };
@@ -119,6 +105,12 @@ const Login = () => {
     // Navigate back to where the user came from
     navigate(from);
   };
+
+  const { user } = useAuth();
+  if (user) {
+    handleSuccessfulLogin();
+  }
+  
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

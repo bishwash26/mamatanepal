@@ -1,6 +1,31 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+// Language storage key
+export const LANGUAGE_STORAGE_KEY = 'app_language';
+
+// Get user's saved language preference or detect browser language
+const getUserLanguage = () => {
+  // 1. Try to get from localStorage
+  if (typeof window !== 'undefined') {
+    const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (savedLanguage && ['en', 'ne'].includes(savedLanguage)) {
+      return savedLanguage;
+    }
+  }
+  
+  // 2. Try to detect from browser
+  if (typeof window !== 'undefined' && navigator.language) {
+    // If browser language starts with 'ne', use Nepali
+    if (navigator.language.startsWith('ne')) {
+      return 'ne';
+    }
+  }
+  
+  // 3. Default to English
+  return 'en';
+};
+
 const resources = {
   en: {
     translation: {
@@ -52,7 +77,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: "en",
+    lng: getUserLanguage(),
     interpolation: {
       escapeValue: false
     }
