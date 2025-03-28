@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Plus, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -38,24 +38,12 @@ export default function Resources() {
   const [userRole, setUserRole] = useState<'user' | 'doctor'>('user');
   const navigate = useNavigate();
   const { user } = useAuth(); // Use AuthContext to get user
+  
+  // Memoize the user ID to prevent unnecessary re-renders
+  const userId = useMemo(() => user?.id, [user]);
 
-  useEffect(() => {
-    // Fetch blogs on mount
-    fetchBlogs();
-
-    // Only fetch user role if we have a user
-    if (user) {
-      fetchUserRole(user.id);
-    }
-  }, [user]); // Re-run when user changes
-
-  useEffect(() => {
-    if (searchParams.get('tab') === 'articles' && searchParams.get('create') === 'true') {
-      setShowCreateBlog(true);
-    }
-  }, [searchParams]);
-
-  const fetchBlogs = async () => {
+  // Memoize the fetchBlogs function to maintain consistent reference
+  const fetchBlogs = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -78,15 +66,15 @@ export default function Resources() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Updated to take userId directly rather than fetching it again
-  const fetchUserRole = async (userId: string) => {
+  // Memoize the fetchUserRole function to maintain consistent reference
+  const fetchUserRole = useCallback(async (id: string) => {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', userId)
+        .eq('id', id)
         .single();
 
       if (error) {
@@ -100,7 +88,25 @@ export default function Resources() {
     } catch (error) {
       console.error('Error fetching user role:', error);
     }
-  };
+  }, []);
+
+  // Single useEffect to handle initial data loading
+  useEffect(() => {
+    // Initial data fetch - only runs once
+    fetchBlogs();
+    
+    // Only fetch user role if we have a userId
+    if (userId) {
+      fetchUserRole(userId);
+    }
+  }, [userId, fetchBlogs, fetchUserRole]); 
+
+  // Handle "create" parameter in URL
+  useEffect(() => {
+    if (searchParams.get('tab') === 'articles' && searchParams.get('create') === 'true') {
+      setShowCreateBlog(true);
+    }
+  }, [searchParams]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
