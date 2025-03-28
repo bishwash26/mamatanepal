@@ -216,8 +216,6 @@ export default function Resources() {
     }
   };
 
-  console.log('Current userRole:', userRole);
-  console.log('Current activeTab:', activeTab);
 
   return (
     <div className="space-y-8">
