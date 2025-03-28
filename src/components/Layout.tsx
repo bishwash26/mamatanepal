@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 export default function Layout() {
   const { t, i18n } = useTranslation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { totalItems } = useCart();
@@ -30,6 +30,23 @@ export default function Layout() {
   useEffect(() => {
     document.documentElement.setAttribute('lang', i18n.language);
   }, [i18n.language]);
+
+  // Close sidebar when navigating
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when sidebar is open
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isSidebarOpen]);
 
   const handleLogout = async () => {
     try {
@@ -54,11 +71,11 @@ export default function Layout() {
   };
 
   const mobileNavItems = [
-    { path: '/', label: 'home', icon: Home },
-    { path: '/resources', label: 'resources', icon: Video },
-    { path: '/discussions', label: 'discussions', icon: MessageCircle },
+    { path: '/', label: 'Home', icon: Home },
+    { path: '/resources', label: 'Resources', icon: Video },
+    { path: '/discussions', label: 'Discussions', icon: MessageCircle },
     { path: '/pregnancy-guide', label: 'Pregnancy Guide', icon: Calendar },
-    { path: '/about', label: 'about', icon: User }
+    { path: '/about', label: 'About', icon: User }
   ];
 
   return (
@@ -157,16 +174,6 @@ export default function Layout() {
                 )}
               </div>
               </div>
-
-            {/* Mobile menu button */}
-            <div className="flex items-center sm:hidden">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-              >
-                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-            </div>
           </div>
         </div>
       </nav>
@@ -174,7 +181,16 @@ export default function Layout() {
       {/* Mobile Header - Fixed */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 sm:hidden z-40 h-14">
         <div className="flex justify-between items-center h-full px-4">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-md"
+            aria-label="Open navigation menu"
+          >
+            <Menu size={24} />
+          </button>
+          
           <h1 className="text-xl font-bold text-primary-600">Mamata Nepal</h1>
+          
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate('/checkout')}
@@ -230,33 +246,89 @@ export default function Layout() {
         )}
       </div>
 
-      {/* Main Content - Add padding for mobile header and bottom nav */}
-      <main className="flex-1 pt-16 pb-16 sm:pt-0 sm:pb-0">
+      {/* Mobile Sidebar Navigation */}
+      {isSidebarOpen && (
+        <>
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 sm:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          ></div>
+          
+          {/* Sidebar */}
+          <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-50 sm:hidden transform transition-transform duration-300 ease-in-out">
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <Link to="/" className="flex items-center space-x-2" onClick={() => setIsSidebarOpen(false)}>
+                <Heart className="h-6 w-6 text-primary-500" />
+                <span className="font-bold text-primary-600">Mamata Nepal</span>
+              </Link>
+              <button 
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-2 text-gray-500 hover:bg-gray-100 rounded-md"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <nav className="p-4">
+              <ul className="space-y-2">
+                {mobileNavItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <li key={item.path}>
+                      <Link
+                        to={item.path}
+                        className={`flex items-center space-x-3 px-3 py-2 rounded-md ${
+                          isActivePath(item.path)
+                            ? 'bg-primary-50 text-primary-600'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <Icon size={20} />
+                        <span>{item.label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+              
+              <div className="border-t border-gray-200 mt-6 pt-4">
+                <div className="px-3 py-2 text-sm text-gray-500">Settings</div>
+                <button 
+                  onClick={toggleLanguage}
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 w-full"
+                >
+                  <Globe size={20} />
+                  <span>{i18n.language === 'en' ? 'Switch to Nepali' : 'Switch to English'}</span>
+                </button>
+                
+                {isLoggedIn ? (
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center space-x-3 px-3 py-2 rounded-md text-red-600 hover:bg-red-50 w-full"
+                  >
+                    <LogOut size={20} />
+                    <span>Logout</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="flex items-center space-x-3 px-3 py-2 rounded-md text-primary-600 hover:bg-primary-50 w-full"
+                  >
+                    <LogIn size={20} />
+                    <span>Login</span>
+                  </button>
+                )}
+              </div>
+            </nav>
+          </div>
+        </>
+      )}
+
+      {/* Main Content - Add padding for mobile header but remove bottom padding */}
+      <main className="flex-1 pt-16 sm:pt-0">
         <Outlet />
       </main>
-
-      {/* Mobile Bottom Navigation - Fixed */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 sm:hidden z-50">
-        <div className="grid grid-cols-4 h-16">
-          {mobileNavItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex flex-col items-center justify-center space-y-1 ${
-                  isActivePath(item.path)
-                    ? 'text-primary-600'
-                    : 'text-gray-600 hover:text-primary-600'
-                }`}
-              >
-                <Icon size={20} />
-                <span className="text-xs">{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
 
       <footer className="bg-white border-t border-primary-100 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
