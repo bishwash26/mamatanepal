@@ -148,9 +148,6 @@ export default function Layout() {
 
                     {isLoggedIn ? (
                       <>
-                        <div className="px-4 py-2 border-b border-primary-100">
-                          <div className="text-sm font-medium text-gray-900">user@example.com</div>
-                        </div>
                         <div className="px-4 py-2 hover:bg-primary-50 cursor-pointer text-red-600" onClick={handleLogout}>
                           <div className="flex items-center space-x-2 text-sm">
                             <LogOut className="h-4 w-4" />
