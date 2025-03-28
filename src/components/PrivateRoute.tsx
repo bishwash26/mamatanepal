@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext.tsx';
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -8,24 +8,16 @@ interface PrivateRouteProps {
 }
 
 export default function PrivateRoute({ children, requireAuth = true }: PrivateRouteProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { user, isLoading } = useAuth();
   const location = useLocation();
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setIsAuthenticated(!!user);
-  };
-
-  if (isAuthenticated === null) {
+  // If still loading, show loading indicator
+  if (isLoading) {
     return <div>Loading...</div>; // Or your loading component
   }
 
   // If authentication is not required or user is authenticated, render children
-  if (!requireAuth || isAuthenticated) {
+  if (!requireAuth || user) {
     return <>{children}</>;
   }
 

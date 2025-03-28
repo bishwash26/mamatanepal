@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { Heart, MessageCircle, Plus, X, LogIn } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.tsx';
 
 interface Post {
   id: string;
@@ -29,18 +30,17 @@ const Discussions = () => {
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  const {user} = useAuth();
 
   const fetchPosts = async (page = 0) => {
     try {
       setLoading(true);
       const from = page * POSTS_PER_PAGE;
       const to = from + POSTS_PER_PAGE - 1;
-
-      const user = (await supabase.auth.getUser()).data.user;
 
       // First get posts with their like and comment counts
       const { data: posts, error } = await supabase
@@ -76,7 +76,8 @@ const Discussions = () => {
           ...post,
           likes: [{ count: Array.isArray(post.likes) ? post.likes.length : 0 }],
           comments: [{ count: Array.isArray(post.comments) ? post.comments.length : 0 }],
-          author_name: post.profiles?.username,
+          author_name: post.profiles && typeof post.profiles === 'object' ? 
+            (post.profiles as any).username : undefined,
           user_has_liked: post.user_liked?.some(like => like.author_id === user?.id)
         }));
 
@@ -118,17 +119,12 @@ const Discussions = () => {
   }, [handleScroll]);
 
   useEffect(() => {
-    checkAuth();
     fetchPosts(currentPage);
   }, [currentPage]);
 
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setIsAuthenticated(!!user);
-  };
 
   const handleCreatePost = () => {
-    if (!isAuthenticated) {
+    if (!user) {
       // Redirect to login
       navigate('/login', { state: { from: location, action: 'createPost' } });
       return;
@@ -140,9 +136,7 @@ const Discussions = () => {
   const createPost = async () => {
     console.log("Created post froom here")
     if (!newPostTitle.trim() || !newPostContent.trim()) return;
-    console.log("so far so good");
 
-    const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
 
     console.log("user is logged in", user);
@@ -171,14 +165,11 @@ const Discussions = () => {
   };
 
   const handleLike = async (postId: string, isLiked: boolean) => {
-    if (!isAuthenticated) {
+    if (!user) {
       // Redirect to login
       navigate('/login', { state: { from: location, action: 'like' } });
       return;
     }
-
-    const user = (await supabase.auth.getUser()).data.user;
-    if (!user) return;
 
     // Optimistically update UI
     setLikedPosts(prev => ({ ...prev, [postId]: !isLiked }));
@@ -238,7 +229,7 @@ const Discussions = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Login Banner for non-authenticated users */}
-      {isAuthenticated === false && (
+      {!user && (
         <div className="bg-primary-50 border-l-4 border-primary-500 p-4 mb-6 flex justify-between items-center">
           <div>
             <p className="text-primary-700">{t('Sign in to create posts, like, and comment')}</p>
@@ -292,7 +283,7 @@ const Discussions = () => {
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleLike(post.id, post.user_has_liked);
+                    handleLike(post.id, post.user_has_liked ?? false);
                   }}
                   className={`flex items-center space-x-1 transition-colors ${
                     post.user_has_liked ? 'text-pink-600' : 'hover:text-pink-600'

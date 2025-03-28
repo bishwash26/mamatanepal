@@ -17,10 +17,12 @@ import { CartProvider } from './context/CartContext';
 import OrderConfirmation from './pages/OrderConfirmation';
 import PaymentFailed from './pages/PaymentFailed';
 import About from './pages/About';
+import { AuthProvider } from './context/AuthContext.tsx';
 import './i18n';
 
 function App() {
   return (
+    <AuthProvider>
     <CartProvider>
       <Router>
         <Routes>
@@ -60,6 +62,7 @@ function App() {
         </Routes>
       </Router>
     </CartProvider>
+    </AuthProvider>
   );
 }
 

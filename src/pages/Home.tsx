@@ -21,6 +21,7 @@ import {
   ShowerHead
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.tsx';
 
 interface Profile {
   id: string;
@@ -120,14 +121,11 @@ export default function Home() {
 
   useEffect(() => {
     fetchUserRole();
-    fetchPopularBlogs();
-    fetchPopularVideos();
-    fetchPopularShorts();
   }, []);
 
   const fetchUserRole = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {user} = useAuth();
       if (!user) return;
       console.log("user", user);
 
@@ -147,75 +145,6 @@ export default function Home() {
       console.error('Error fetching user role:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchPopularBlogs = async () => {
-    try {
-      setLoadingBlogs(true);
-      const { data, error } = await supabase
-        .from('blogs')
-        .select(`
-          *,
-          profiles (
-            username
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(4);
-
-      if (error) throw error;
-      setPopularBlogs(data || []);
-    } catch (error) {
-      console.error('Error fetching blogs:', error);
-    } finally {
-      setLoadingBlogs(false);
-    }
-  };
-
-  const fetchPopularVideos = async () => {
-    try {
-      setLoadingVideos(true);
-      const { data, error } = await supabase
-        .from('videos')
-        .select(`
-          *,
-          profiles (
-            username
-          )
-        `)
-        .order('views', { ascending: false })
-        .limit(4);
-
-      if (error) throw error;
-      setPopularVideos(data || []);
-    } catch (error) {
-      console.error('Error fetching popular videos:', error);
-    } finally {
-      setLoadingVideos(false);
-    }
-  };
-
-  const fetchPopularShorts = async () => {
-    try {
-      setLoadingShorts(true);
-      const { data, error } = await supabase
-        .from('shorts')
-        .select(`
-          *,
-          profiles (
-            username
-          )
-        `)
-        .order('views', { ascending: false })
-        .limit(6);
-
-      if (error) throw error;
-      setPopularShorts(data || []);
-    } catch (error) {
-      console.error('Error fetching popular shorts:', error);
-    } finally {
-      setLoadingShorts(false);
     }
   };
 

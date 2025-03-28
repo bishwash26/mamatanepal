@@ -141,13 +141,6 @@ const PostDetails = () => {
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      // Redirect to login
-      navigate('/login', { state: { from: location, action: 'comment' } });
-      return;
-    }
-
     const { error } = await supabase
       .from('comments')
       .insert([
@@ -189,7 +182,12 @@ const PostDetails = () => {
       }
 
       setIsLiked(false);
-      setLikeCount(prev => prev - 1);
+      if (isLiked) {
+        setLikeCount(prev => prev-1);
+      }
+      else {
+        setLikeCount(prev => prev+1);
+      }
     } else {
       // Like
       const { error } = await supabase

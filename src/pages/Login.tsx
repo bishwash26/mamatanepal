@@ -4,6 +4,7 @@ import { Heart, Eye, EyeOff, Mail, Lock, LogIn, CheckCircle, AlertCircle, X, XCi
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext.tsx';
 
 type ViewType = 'sign_in' | 'sign_up';
 type NotificationType = 'success' | 'error' | 'info' | null;
@@ -75,62 +76,17 @@ const Login = () => {
 
   useEffect(() => {
     // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        handleSuccessfulLogin();
-      }
-    };
+    const { user } = useAuth();
+    if (user) {
+      handleSuccessfulLogin();
+    }
     
-    checkUser();
-    
-    // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          handleSuccessfulLogin();
-        }
-      }
-    );
-    
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
     // Check for recovery mode in query params
     const loginMode = searchParams.get('loginMode');
     if (loginMode === 'recovery') {
       setShowPasswordResetModal(true);
-      
-      // Log for debugging
-      console.log("Recovery mode detected, showing password reset modal");
     }
   }, [searchParams]);
-
-  // Add special handling for hash fragment which might contain the access token
-  useEffect(() => {
-    // When arriving from a password reset email, check if there's a hash in the URL
-    // This is where Supabase puts the access token
-    const hash = window.location.hash;
-    const queryParams = new URLSearchParams(window.location.search);
-    const loginMode = queryParams.get('loginMode');
-    
-    if (hash && hash.includes('access_token') && loginMode === 'recovery') {
-      console.log("Access token found in URL with recovery mode, showing password reset modal");
-      setShowPasswordResetModal(true);
-      
-      // Store the fact that we're in recovery mode
-      localStorage.setItem('passwordRecoveryMode', 'true');
-    }
-    
-    // Check local storage if we were in recovery mode but the modal was closed
-    const recoveryMode = localStorage.getItem('passwordRecoveryMode');
-    if (recoveryMode === 'true' && loginMode === 'recovery') {
-      setShowPasswordResetModal(true);
-    }
-  }, []);
   
   const showNotification = (type: NotificationType, message: string) => {
     setNotification({ type, message });
@@ -289,7 +245,7 @@ const Login = () => {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
-        redirectTo: `${window.location.origin}/?loginMode=recovery`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       
       if (error) throw error;
@@ -339,9 +295,6 @@ const Login = () => {
       setNewPassword('');
       setConfirmNewPassword('');
       setShowPasswordResetModal(false);
-      
-      // Clear recovery mode from localStorage
-      localStorage.removeItem('passwordRecoveryMode');
       
       // Remove the query parameter
       navigate('/', { replace: true });
