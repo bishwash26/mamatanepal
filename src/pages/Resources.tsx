@@ -110,12 +110,14 @@ export default function Resources() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-primary-700 mb-4">{t('resources')}</h1>
+      <header className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-primary-700 mb-4">
+          {t('resources')}
+        </h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
           Expert advice and resources to guide you through your pregnancy journey
         </p>
-      </div>
+      </header>
 
       {/* Action Buttons */}
       <div className="mb-8">
@@ -133,60 +135,63 @@ export default function Resources() {
       </div>
 
       {/* Blogs Grid */}
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-        </div>
-      ) : blogs.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {blogs.map(blog => {
-            // Truncate content to 50 words
-            const { content: truncatedContent, isTruncated } = truncateContent(blog.content, 50);
-            
-            return (
-              <article 
-                key={blog.id} 
-                className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full transition-transform hover:scale-[1.01] hover:shadow-lg"
-              >
-                <div className="h-48 overflow-hidden">
-                  <img 
-                    className="w-full h-full object-cover" 
-                    src={blog.image_url || 'https://via.placeholder.com/400x300'} 
-                    alt={blog.title}
-                  />
-                </div>
-                <div className="p-6 flex-grow flex flex-col">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                    {blog.title}
-                  </h2>
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                    <span className="flex items-center">
-                      <User size={14} className="mr-1" />
-                      {blog.author_credit || blog.profiles?.username || t('Anonymous')}
-                    </span>
-                    <span>{new Date(blog.created_at).toLocaleDateString()}</span>
+      <section aria-labelledby="blog-posts">
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+          </div>
+        ) : blogs.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {blogs.map(blog => {
+              // Truncate content to 50 words
+              const { content: truncatedContent, isTruncated } = truncateContent(blog.content, 50);
+              
+              return (
+                <article 
+                  key={blog.id} 
+                  className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full transition-transform hover:scale-[1.01] hover:shadow-lg"
+                >
+                  <div className="h-48 overflow-hidden">
+                    <img 
+                      className="w-full h-full object-cover" 
+                      src={blog.image_url || 'https://via.placeholder.com/400x300'} 
+                      alt={blog.title}
+                    />
                   </div>
-                  <p className="text-gray-600 mb-4 flex-grow">
-                    {truncatedContent}
-                  </p>
-                  <button 
-                    onClick={() => navigate(`/blogs/${blog.id}`)}
-                    className="text-primary-600 hover:text-primary-700 font-medium mt-auto self-start"
-                  >
-                    {t('readMore')} →
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">
-            {t('No articles available yet')}
-          </p>
-        </div>
-      )}
+                  <div className="p-6 flex-grow flex flex-col">
+                    <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                      {blog.title}
+                    </h2>
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                      <span className="flex items-center">
+                        <User size={14} className="mr-1" />
+                        {blog.author_credit || blog.profiles?.username || t('Anonymous')}
+                      </span>
+                      <span>{new Date(blog.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-gray-600 mb-4 flex-grow">
+                      {truncatedContent}
+                    </p>
+                    <button 
+                      onClick={() => navigate(`/blogs/${blog.id}`)}
+                      className="text-primary-600 hover:text-primary-700 font-medium mt-auto self-start"
+                      aria-label={`Read more about ${blog.title}`}
+                    >
+                      {t('readMore')} →
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">
+              {t('No articles available yet')}
+            </p>
+          </div>
+        )}
+      </section>
 
       {showCreateBlog && (
         <CreateBlog
